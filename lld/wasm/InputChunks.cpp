@@ -433,6 +433,18 @@ bool InputChunk::generateRelocationCode(raw_ostream &os) const {
     if (!requiresRuntimeReloc)
       continue;
 
+    // A location-relative relocation (Swift's relative pointers) between two
+    // places in this module holds wherever the module is loaded: `relocate`
+    // already wrote its value. Adding __memory_base to it (or storing the
+    // symbol's GOT address, for one the module exports) would break it.
+    if (rel.Type == R_WASM_MEMORY_ADDR_LOCREL_I32) {
+      if (!sym->isDefined())
+        error(toString(file) + ": relocation " + relocTypeToString(rel.Type) +
+              " cannot be used against an undefined symbol `" +
+              toString(*sym) + "`");
+      continue;
+    }
+
     LLVM_DEBUG(dbgs() << "gen reloc: type=" << relocTypeToString(rel.Type)
                       << " addend=" << rel.Addend << " index=" << rel.Index
                       << " output offset=" << offset << "\n");
