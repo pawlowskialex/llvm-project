@@ -170,6 +170,17 @@ void scanRelocations(InputChunk *chunk) {
         if (requiresGOTAccess(sym))
           addGOTEntry(sym);
         break;
+      case R_WASM_MEMORY_ADDR_LOCREL_I32:
+      case R_WASM_MEMORY_ADDR_LOCREL_I64:
+        // These relocation types are resolved at link time and need no
+        // runtime relocation, which requires their target to be defined
+        // within the current module.
+        if (!isa<DefinedData>(sym))
+          error(toString(file) + ": relocation " +
+                relocTypeToString(reloc.Type) +
+                " cannot be used against symbol `" + toString(*sym) +
+                "` which is not defined in this module");
+        break;
       }
     }
 

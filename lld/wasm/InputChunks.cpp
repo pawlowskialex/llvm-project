@@ -449,6 +449,14 @@ bool InputChunk::generateRelocationCode(raw_ostream &os) const {
   // TODO(sbc): Encode the relocations in the data section and write a loop
   // here to apply them.
   for (const WasmRelocation &rel : relocations) {
+    // Location-relative relocations are position-independent: the difference
+    // between their target and their location, written at link time by
+    // `relocate`, holds wherever the module is loaded.  (`scanRelocations`
+    // rejects those whose target is not defined in the module.)
+    if (rel.Type == R_WASM_MEMORY_ADDR_LOCREL_I32 ||
+        rel.Type == R_WASM_MEMORY_ADDR_LOCREL_I64)
+      continue;
+
     Symbol *sym = file->getSymbol(rel);
     // Runtime relocations are needed when we don't know the address of
     // a symbol statically.
