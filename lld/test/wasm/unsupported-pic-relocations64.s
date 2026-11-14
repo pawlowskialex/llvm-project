@@ -41,3 +41,14 @@ _start:
     call use_undefined_function
     call use_undefined_data
     end_function
+
+## Location-relative relocations are resolved at link time, which requires
+## their target to be defined in the module.
+.section .data.locrel,"",@
+.globl locrel
+locrel:
+  .int32 external_data - locrel
+  # CHECK: error: {{.*}}.o: relocation R_WASM_MEMORY_ADDR_LOCREL_I32 cannot be used against symbol `external_data` which is not defined in this module
+  .int64 external_data - (locrel + 4)
+  # CHECK: error: {{.*}}.o: relocation R_WASM_MEMORY_ADDR_LOCREL_I64 cannot be used against symbol `external_data` which is not defined in this module
+  .size locrel, 12
